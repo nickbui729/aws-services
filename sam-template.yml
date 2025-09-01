@@ -1,0 +1,60 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: Zip-based Lambda deployed with SAM + API Gateway REST endpoint
+
+Parameters:
+  StageName:
+    Type: String
+    Default: dev
+  FunctionName:
+    Type: String
+    Default: image-ingestor-dev
+
+Globals:
+  Function:
+    Runtime: python3.12
+    MemorySize: 256
+    Timeout: 15
+    Policies:
+      - AWSLambdaBasicExecutionRole
+    Tracing: Active
+
+Resources:
+  ImageIngestApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      Name: !Sub image-ingestor-api-${StageName}
+      StageName: !Ref StageName
+      EndpointConfiguration: REGIONAL
+      # Uncomment if you want CORS
+      # Cors: "'*'"
+
+  ImageIngestor:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: !Ref FunctionName
+      Handler: app.lambda_handler
+      CodeUri: src/               # SAM zips this folder
+      AutoPublishAlias: live
+      DeploymentPreference:
+        Type: Canary10Percent5Minutes
+      Events:
+        Ingest:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ImageIngestApi
+            Path: /ingest
+            Method: POST
+
+Outputs:
+  ApiBaseUrl:
+    Description: Base URL for the REST API
+    Value: !Sub https://${ImageIngestApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}
+
+  InvokeUrlExample:
+    Description: Example endpoint you can hit after deploy
+    Value: !Sub https://${ImageIngestApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/ingest
+
+  FunctionArn:
+    Description: Lambda function ARN
+    Value: !GetAtt ImageIngestor.Arn

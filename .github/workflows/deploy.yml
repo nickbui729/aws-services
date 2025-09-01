@@ -1,0 +1,30 @@
+name: Deploy SAM (ZIP)
+on:
+  push:
+    branches: [ main, dev ]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      # Configure AWS (replace role-to-assume and region)
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::542768766351:role/github-oidc-deploy
+          aws-region: us-west-1
+
+      - name: Install SAM CLI
+        run: |
+          pipx install aws-sam-cli
+
+      - name: Build
+        run: sam build --template sam-template.yml
+
+      - name: Deploy (guided params pre-saved with --config-env ci)
+        run: sam deploy --config-env ci
+
+
