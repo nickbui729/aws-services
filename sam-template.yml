@@ -29,6 +29,7 @@ Resources:
       # Uncomment if you want CORS
       # Cors: "'*'"
 
+Resources:
   ImageIngestor:
     Type: AWS::Serverless::Function
     Properties:
