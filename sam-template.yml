@@ -15,8 +15,6 @@ Globals:
     Runtime: python3.12
     MemorySize: 256
     Timeout: 15
-    Policies:
-      - AWSLambdaBasicExecutionRole
     Tracing: Active
 
 Resources:
@@ -38,9 +36,17 @@ Resources:
       AutoPublishAlias: live
       DeploymentPreference:
         Type: Canary10Percent5Minutes
+      Policies:
+        - Statement:
+          - Effect: Allow
+            Action: s3:ListBucket
+            Resource: "*"
+          - Effect: Allow
+            Action: s3:GetObject
+            Resource: "*"
       Events:
-        Ingest:
-          Type: Api
+        ImageIngestPost:
+          Type: Ap
           Properties:
             RestApiId: !Ref ImageIngestApi
             Path: /ingest
